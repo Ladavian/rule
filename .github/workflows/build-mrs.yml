@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download mihomo (v1.19.19)
+      - name: Download mihomo v1.19.19
         run: |
           MIHOMO_VERSION=v1.19.19
           MIHOMO_ARCH=amd64
@@ -32,10 +32,16 @@ jobs:
       - name: Convert yaml to mrs
         run: |
           mkdir -p mrs
+
           for file in rules/*.yaml; do
             name=$(basename "$file" .yaml)
             echo "Converting $file -> mrs/$name.mrs"
-            mihomo convert-ruleset "$file" "mrs/$name.mrs"
+
+            mihomo convert-ruleset \
+              classical \
+              mrs \
+              "$file" \
+              "mrs/$name.mrs"
           done
 
       - name: Commit and push mrs files
