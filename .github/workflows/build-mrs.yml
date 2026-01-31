@@ -1,0 +1,40 @@
+name: Build MRS Ruleset
+
+on:
+  push:
+    paths:
+      - "rules/**/*.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-mrs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up mihomo
+        run: |
+          curl -L https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64.gz -o mihomo.gz
+          gunzip mihomo.gz
+          chmod +x mihomo
+          sudo mv mihomo /usr/local/bin/mihomo
+
+      - name: Convert yaml to mrs
+        run: |
+          mkdir -p mrs
+          mihomo convert-ruleset rules/clash.yaml mrs/clash.mrs
+          mihomo convert-ruleset rules/zdy.yaml mrs/zdy.mrs
+
+      - name: Commit and push mrs files
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add mrs/*.mrs
+          git diff --cached --quiet || git commit -m "chore: auto build mrs ruleset"
+          git push
