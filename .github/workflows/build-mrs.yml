@@ -14,27 +14,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up mihomo
-        run: |
-          curl -L https://github.com/MetaCubeX/mihomo/releases/latest/download/mihomo-linux-amd64.gz -o mihomo.gz
-          gunzip mihomo.gz
-          chmod +x mihomo
-          sudo mv mihomo /usr/local/bin/mihomo
-
-      - name: Convert yaml to mrs
+      - name: Build mrs with mihomo docker
         run: |
           mkdir -p mrs
-          mihomo convert-ruleset rules/clash.yaml mrs/clash.mrs
-          mihomo convert-ruleset rules/zdy.yaml mrs/zdy.mrs
+          for file in rules/*.yaml; do
+            name=$(basename "$file" .yaml)
+            docker run --rm -v ${{ github.workspace }}:/data metacubex/mihomo \
+              convert-ruleset "/data/$file" "/data/mrs/$name.mrs"
+          done
 
       - name: Commit and push mrs files
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-
           git add mrs/*.mrs
           git diff --cached --quiet || git commit -m "chore: auto build mrs ruleset"
           git push
